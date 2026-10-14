@@ -52,13 +52,13 @@
   <text class="label" x="245" y="490" text-anchor="middle">worker</text>
   <text class="small" x="245" y="510" text-anchor="middle">batch pool（常駐）</text>
 
-  <rect class="node risk" x="120" y="560" width="250" height="64" rx="8"/>
-  <text class="label" x="245" y="586" text-anchor="middle">mxc-sandbox</text>
-  <text class="small" x="245" y="606" text-anchor="middle">隔離 · 不可信程式碼</text>
+  <rect class="node risk ext" x="120" y="560" width="250" height="64" rx="8"/>
+  <text class="label" x="245" y="584" text-anchor="middle">mxc-sandbox（選配）</text>
+  <text class="small" x="245" y="606" text-anchor="middle">預設不開 · 跑產生的程式碼才需要</text>
 
   <rect class="node process" x="600" y="366" width="300" height="68" rx="8"/>
   <text class="label" x="750" y="392" text-anchor="middle">mcp-*</text>
-  <text class="small" x="750" y="412" text-anchor="middle">k8s / ES / Grafana（工具）</text>
+  <text class="small" x="750" y="412" text-anchor="middle">k8s / ES / Grafana / 通知(chat)</text>
 
   <rect class="node external ext" x="600" y="464" width="300" height="68" rx="8"/>
   <text class="label" x="750" y="490" text-anchor="middle">LLM（外部 API）</text>
@@ -79,7 +79,6 @@
   <path class="edge" marker-end="url(#a)" d="M370 382 H 600"/>
   <path class="edge" marker-end="url(#a)" d="M370 414 H 580 V 498 H 600"/>
   <path class="edge" marker-end="url(#a)" d="M370 498 H 520 V 428 H 600"/>
-  <path class="edge" marker-end="url(#a)" d="M245 532 V 560"/>
   <path class="edge" marker-end="url(#a)" d="M120 400 H 84 V 748 H 180"/>
   <path class="edge" marker-end="url(#a)" d="M120 498 H 106 V 782 H 180"/>
   <text class="small" x="430" y="680">觸發巡檢：api 寫 queue → worker 接手</text>

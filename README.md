@@ -30,11 +30,11 @@ npm run preview  # 預覽 production build
 
 ## 文件
 
-- [`docs/platform-org-permissions.md`](docs/platform-org-permissions.md) — Platform 定位的組織／權限架構設計（處→部門→課、Capability × DataScope × Action）
+- [`docs/gam-access-management.md`](docs/gam-access-management.md) — GAM 群組存取管理設計（各單位自己申請、群組自己維護權限）
 
 ## Prototype（可動）
 
-- [`prototype/`](prototype/) — SQLite schema v1 + 零依賴可跑 prototype：**登入 → 看到哪些 Workspace**（Azure 式階層：處 › 部門 › 課 › Workspace）
+- [`prototype/`](prototype/) — SQLite schema v2（GAM）+ 零依賴可跑 prototype：**登入 → 看到哪些 Workspace → 申請 → 群組自己審/維護權限**
   ```bash
   cd prototype && node seed.mjs && node server.mjs   # → http://localhost:5180
   ```

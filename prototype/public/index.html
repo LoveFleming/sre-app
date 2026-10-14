@@ -3,223 +3,315 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>SRE Platform — Workspace 存取 Prototype</title>
+<title>SRE Platform — GAM Group Access Management (Prototype)</title>
 <style>
   :root{--bg:#0f172a;--panel:#111c33;--panel2:#16233f;--line:#24344f;--tx:#e6edf7;--dim:#8ba0bf;--acc:#3b82f6;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444}
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,"Segoe UI","Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--tx)}
-  a{color:var(--acc)}
   .hidden{display:none!important}
-
-  /* login */
-  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
   #login h1{font-size:22px;margin:0}
-  #login .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 28px;width:360px}
-  #login input{width:100%;padding:10px 12px;margin:6px 0 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);font-size:14px}
-  #login button{width:100%;padding:11px;border-radius:9px;border:0;background:var(--acc);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
-  #login .demo{margin-top:14px;font-size:12px;color:var(--dim)}
-  #login .demo button{width:auto;display:inline-block;background:var(--panel2);color:var(--tx);border:1px solid var(--line);padding:5px 9px;margin:3px 3px 0 0;font-size:12px;font-weight:500}
+  #login .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 26px;width:400px}
+  input,select{width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);font-size:14px;margin:5px 0 12px}
+  button{cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);padding:7px 12px;font-size:13px}
+  button.primary{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600;width:100%;padding:11px}
+  button.mini{padding:3px 8px;font-size:11.5px}
+  button.ok{border-color:var(--ok);color:var(--ok)}
+  button.no{border-color:var(--err);color:var(--err)}
   .err{color:var(--err);font-size:13px;min-height:16px}
-
-  /* shell */
-  header{display:flex;align-items:center;gap:14px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  #login .demo{margin-top:12px;font-size:12px;color:var(--dim)}
+  #login .demo button{margin:3px 3px 0 0;font-size:12px}
+  header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap}
   header .logo{font-weight:700}
   header .who{color:var(--dim);font-size:13px}
   header .spacer{flex:1}
   .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);margin-left:6px}
   .chip.temp{border-color:var(--warn);color:var(--warn)}
-  header button{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
-
-  .wrap{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 53px)}
-  aside{border-right:1px solid var(--line);padding:12px;overflow:auto}
-  aside h3,main h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:6px 0 10px}
-  main{padding:18px 22px;overflow:auto}
-
-  .node{margin-left:0}
-  .node .row{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:7px;cursor:default;font-size:13px}
-  .node .row .lvl{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:0 5px}
-  .node .row.locked{opacity:.42}
-  .ws{display:flex;align-items:center;gap:8px;padding:6px 8px;margin:2px 0 2px 8px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid transparent}
-  .ws:hover{background:var(--panel2)}
-  .ws.active{background:var(--panel2);border-color:var(--acc)}
-  .ws .kind{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-left:auto}
-  .ws .badge{font-size:10px;padding:0 5px;border-radius:5px;border:1px solid var(--line);color:var(--dim)}
-  .ws .badge.shared{border-color:var(--acc);color:var(--acc)}
-  .ws .badge.linked{border-color:var(--ok);color:var(--ok)}
-
-  .crumb{font-size:12px;color:var(--dim);margin-bottom:14px}
-  .crumb b{color:var(--tx)}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+  .tabs{display:flex;gap:6px;padding:10px 18px 0;flex-wrap:wrap}
+  .tab{padding:7px 14px;border-radius:9px 9px 0 0;border:1px solid transparent;color:var(--dim);font-size:13.5px}
+  .tab.active{background:var(--panel);border-color:var(--line);border-bottom-color:var(--panel);color:var(--tx);font-weight:600}
+  main{padding:18px 22px;max-width:1100px}
+  h3{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);margin:18px 0 10px}
+  h3:first-child{margin-top:0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
-  .card .k{font-size:11px;color:var(--dim)}
-  .card .v{font-size:22px;font-weight:700;margin-top:4px}
-  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
-  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  .card.click{cursor:pointer}
+  .card.click:hover{border-color:var(--acc)}
+  .card .t{font-weight:600;display:flex;align-items:center;gap:8px}
+  .card .d{font-size:12px;color:var(--dim);margin-top:5px;min-height:30px}
+  .card .f{display:flex;align-items:center;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .pill{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .pill.admin{color:var(--err);border-color:var(--err)}
+  .pill.approve{color:var(--warn);border-color:var(--warn)}
+  .pill.operate{color:var(--acc);border-color:var(--acc)}
+  .pill.view,.pill.ok{color:var(--ok);border-color:var(--ok)}
+  .pill.muted{color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
   th{color:var(--dim);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .notice{background:#1d2a45;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--dim);margin:10px 0}
+  .notice.warn{border-left-color:var(--warn)}
+  .empty{color:var(--dim);font-size:13px;padding:16px 0}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   .st{padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid var(--line)}
   .st.Healthy,.st.ok,.st.Resolved{color:var(--ok);border-color:var(--ok)}
   .st.Warning,.st.Open{color:var(--warn);border-color:var(--warn)}
-  .notice{background:#1d2a45;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--dim);margin:12px 0}
-  .notice.warn{border-left-color:var(--warn)}
-  .empty{color:var(--dim);font-size:13px;padding:20px 0}
-  .roles{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .rolechip{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line)}
-  .rolechip b{color:var(--acc);font-weight:600}
+  .sel{max-width:280px}
+  code{background:var(--panel2);padding:1px 5px;border-radius:5px;font-size:12px}
 </style>
 </head>
 <body>
 
-<!-- ============ 登入 ============ -->
 <div id="login">
-  <h1>🛡️ SRE Platform</h1>
+  <h1>🛡️ SRE Platform — GAM</h1>
   <div class="card">
-    <div style="font-size:13px;color:var(--dim);margin-bottom:12px">登入後，你會看到「你有權存取」的 Workspace 階層（處 → 部門 → 課 → Workspace）</div>
+    <div style="font-size:13px;color:var(--dim);margin-bottom:12px">群組制存取管理：登入 → 看你的工作站 → 沒有的可「申請」→ 群組 owner 自己審、自己維護權限</div>
     <label style="font-size:12px;color:var(--dim)">帳號</label>
-    <input id="u" placeholder="username" value="eng.mon" />
+    <input id="u" value="newbie" />
     <label style="font-size:12px;color:var(--dim)">密碼（demo123）</label>
     <input id="p" type="password" value="demo123" />
     <div class="err" id="loginErr"></div>
-    <button onclick="doLogin()">登入</button>
-    <div class="demo">快速試不同身分（密碼皆 demo123）：<br/>
+    <button class="primary" onclick="doLogin()">登入</button>
+    <div class="demo">快速切換身分：<br/>
       <button onclick="quick('admin')">平台管理員</button>
-      <button onclick="quick('chief.info')">處長</button>
-      <button onclick="quick('mgr.sysops')">部門主管</button>
-      <button onclick="quick('lead.mon')">課長</button>
-      <button onclick="quick('eng.mon')">值班工程師</button>
-      <button onclick="quick('viewer.app2')">觀察(唯讀)</button>
-      <button onclick="quick('auditor')">稽核</button>
-      <button onclick="quick('noc.duty')">NOC</button>
+      <button onclick="quick('lead.mon')">監控組 owner</button>
+      <button onclick="quick('eng.mon')">監控組成員</button>
+      <button onclick="quick('lead.app1')">應用一組 owner</button>
+      <button onclick="quick('auditor')">稽核組</button>
+      <button onclick="quick('newbie')">新人(待審)</button>
     </div>
   </div>
 </div>
 
-<!-- ============ 主畫面 ============ -->
 <div id="shell" class="hidden">
   <header>
     <span class="logo">🛡️ SRE Platform</span>
     <span class="who" id="who"></span>
-    <span id="roleChips"></span>
+    <span id="chips"></span>
     <span class="spacer"></span>
-    <button id="auditBtn" class="hidden" onclick="showAudit()">稽核日誌</button>
     <button onclick="logout()">登出</button>
   </header>
-  <div class="wrap">
-    <aside>
-      <h3>你的 Workspaces</h3>
-      <div id="tree"></div>
-    </aside>
-    <main id="main">
-      <div class="empty">← 左邊選一個 workspace</div>
-    </main>
-  </div>
+  <div class="tabs" id="tabs"></div>
+  <main id="main"></main>
 </div>
 
 <script>
-let TOKEN = localStorage.getItem("sre_token") || "";
-let ME = null;
+let TOKEN = ***…Item("gam_token") || "";
+let ME = null, TABS = [];
 
 const api = async (path, opts = {}) => {
-  const r = await fetch(path, {
-    ...opts,
-    headers: { "Content-Type": "application/json", ...(TOKEN ? { Authorization: "Bearer " + TOKEN } : {}), ...(opts.headers || {}) },
-  });
-  return { status: r.status, body: await r.json().catch(() => ({})) };
+  const r = await fetch(path, { ...opts, headers: { "Content-Type": "application/json", ...(TOKEN ? { Authorization: "***" + TOKEN } : {}), ...(opts.headers || {}) } });
+  let b = {}; try { b = await r.json(); } catch {}
+  return { status: r.status, body: b };
 };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const PERM_LABEL = { view: "唯讀", operate: "可操作", approve: "可審批", admin: "管理" };
 
 function quick(u) { document.getElementById("u").value = u; document.getElementById("p").value = "demo123"; doLogin(); }
-
 async function doLogin() {
-  const username = document.getElementById("u").value.trim();
-  const password = document.getElementById("p").value;
+  const username = document.getElementById("u").value.trim(), password = document.getElementById("p").value;
   const { body } = await api("/api/login", { method: "POST", body: JSON.stringify({ username, password }) });
   if (!body.token) { document.getElementById("loginErr").textContent = body.error || "登入失敗"; return; }
-  TOKEN = body.token; localStorage.setItem("sre_token", TOKEN);
-  boot();
+  TOKEN = *** localStorage.setItem("gam_token", TOKEN); boot();
 }
-
-function logout() { TOKEN = ""; localStorage.removeItem("sre_token"); location.reload(); }
-
-const LEVEL = { platform: "平台", office: "處", department: "部門", section: "課" };
+function logout() { TOKEN = ""; localStorage.removeItem("gam_token"); location.reload(); }
 
 async function boot() {
-  const me = await api("/api/me");
-  if (me.status !== 200) { TOKEN = ""; localStorage.removeItem("sre_token"); return; }
-  ME = me.body;
+  const r = await api("/api/me");
+  if (r.status !== 200) { TOKEN = ""; localStorage.removeItem("gam_token"); location.reload(); return; }
+  ME = r.body;
   document.getElementById("login").classList.add("hidden");
   document.getElementById("shell").classList.remove("hidden");
+  document.getElementById("who").textContent = `${ME.user.displayName} · ${ME.user.title || ""}${ME.user.isPlatformAdmin ? " · 平台管理" : ""}`;
+  document.getElementById("chips").innerHTML = ME.groups.map((g) => `<span class="chip${g.temporary ? " temp" : ""}">群組：${esc(g.name)}（${g.role}）${g.temporary ? " ⏱" : ""}</span>`).join("") || '<span class="chip">尚無群組</span>';
 
-  document.getElementById("who").textContent = `${ME.user.displayName} · ${ME.user.title || ""} · ${ME.user.orgName}`;
-  document.getElementById("roleChips").innerHTML = ME.roles
-    .map((r) => `<span class="chip${r.temporary ? " temp" : ""}">${r.roleName} @ ${r.orgName}${r.temporary ? " ⏱" : ""}</span>`)
-    .join("");
-  if (ME.capabilities.includes("view.audit")) document.getElementById("auditBtn").classList.remove("hidden");
-
-  const [orgs, wss] = await Promise.all([api("/api/orgs"), api("/api/workspaces")]);
-  renderTree(orgs.body.roots, wss.body.workspaces);
+  TABS = [["access", "我的存取"], ["discover", "探索 / 申請"], ["groups", "我的群組"], ["manage", "管理群組"]];
+  if (ME.capabilities.includes("view.audit")) TABS.push(["audit", "稽核日誌"]);
+  renderTabs("access");
 }
 
-function renderTree(roots, workspaces) {
-  const byOrg = {};
-  workspaces.forEach((w) => (byOrg[w.orgId] = byOrg[w.orgId] || []).push(w));
-  const el = document.getElementById("tree");
-  el.innerHTML = "";
-  const nodeHtml = (n) => {
-    const kids = (n.children || []).map(nodeHtml).join("");
-    const ws = (byOrg[n.id] || [])
-      .map((w) => `<div class="ws" data-id="${w.id}" onclick="openWs('${w.id}')">
-          <span>📦</span><span>${w.name}</span>
-          <span class="kind">${w.kind}</span>
-          ${w.reason === "shared" ? '<span class="badge shared">共用</span>' : ""}
-          ${w.reason === "linked" ? '<span class="badge linked">關聯</span>' : ""}
-        </div>`)
-      .join("");
-    return `<div class="node">
-      <div class="row ${n.accessible ? "" : "locked"}">
-        <span class="lvl">${LEVEL[n.level] || n.level}</span><span>${n.name}</span>${n.accessible ? "" : " 🔒"}
-      </div>${ws}${kids}
-    </div>`;
-  };
-  el.innerHTML = roots.map(nodeHtml).join("") || '<div class="empty">沒有可存取的 workspace</div>';
+function renderTabs(active) {
+  document.getElementById("tabs").innerHTML = TABS.map(([k, l]) => `<div class="tab ${k === active ? "active" : ""}" onclick="renderTabs('${k}');go('${k}')">${l}</div>`).join("");
+  go(active);
+}
+function go(k) {
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.getAttribute("onclick")?.includes(`'${k}'`)));
+  ({ access: viewAccess, discover: viewDiscover, groups: viewGroups, manage: viewManage, audit: viewAudit }[k])();
+}
+
+// ---------------------------------------------------------------- 我的存取
+async function viewAccess() {
+  const { body } = await api("/api/access");
+  const main = document.getElementById("main");
+  if (!body.workspaces?.length) { main.innerHTML = `<h3>我的工作站</h3><div class="notice warn">你目前沒有任何工作站。到「探索 / 申請」找一個群組申請加入，或請群組 owner 把你加進去。</div>`; return; }
+  main.innerHTML = `<h3>我的工作站（${body.workspaces.length}）— 你能看到／操作的</h3>
+    <div class="cards">${body.workspaces.map((w) => `
+      <div class="card click" onclick="openWs('${w.id}')">
+        <div class="t">📦 ${esc(w.name)} ${w.shared ? '<span class="pill muted">共用</span>' : ""}</div>
+        <div class="d">${esc(w.description || "")}<br/><span style="opacity:.7">主責：${esc(w.ownerGroup || "-")}</span></div>
+        <div class="f"><span class="pill ${w.permission}">${PERM_LABEL[w.permission]}</span><span class="pill muted">來源：${esc(w.via.join("、"))}</span></div>
+      </div>`).join("")}</div>`;
 }
 
 async function openWs(id) {
-  document.querySelectorAll(".ws").forEach((e) => e.classList.toggle("active", e.dataset.id === id));
   const { status, body } = await api("/api/workspaces/" + encodeURIComponent(id));
   const main = document.getElementById("main");
-  if (status !== 200) { main.innerHTML = `<div class="notice warn">${body.error}</div>`; return; }
+  if (status !== 200) { main.innerHTML = `<div class="notice warn">${esc(body.error)}</div>`; return; }
   const w = body.workspace;
-  const crumb = w.breadcrumb.map((b) => b.name).join("  ›  ");
-  const counts = {};
-  body.resources.forEach((r) => (counts[r.type] = (counts[r.type] || 0) + 1));
   main.innerHTML = `
-    <div class="crumb">${crumb}  ›  <b>${w.name}</b></div>
-    <h3>${w.name} <span class="chip">${w.kind}</span></h3>
-    <div style="color:var(--dim);font-size:13px">${w.description || ""}</div>
-    <div class="cards" style="margin-top:14px">
-      <div class="card"><div class="k">可見資源</div><div class="v">${body.resources.length}</div></div>
-      <div class="card"><div class="k">服務</div><div class="v">${counts.service || 0}</div></div>
-      <div class="card"><div class="k">事件</div><div class="v">${counts.incident || 0}</div></div>
-      <div class="card"><div class="k">儀表板/報告</div><div class="v">${(counts.dashboard || 0) + (counts.report || 0)}</div></div>
-    </div>
-    ${body.hiddenCount ? `<div class="notice warn">有 ${body.hiddenCount} 筆資源不在你的資料範圍（DataScope）內 — 看得到這個 workspace，但看不到別單位的資料。這是設計如此，不是錯誤。</div>` : ""}
-    <table>
-      <tr><th>類型</th><th>名稱</th><th>主責單位</th><th>狀態</th></tr>
-      ${body.resources.map((r) => `<tr><td>${r.type}</td><td>${r.name}</td><td>${r.ownerOrgName || ""}</td><td><span class="st ${r.status}">${r.status || "-"}</span></td></tr>`).join("") || ""}
-    </table>
-    ${body.resources.length ? "" : '<div class="empty">此 workspace 內沒有你範圍內的資源</div>'}
-  `;
+    <button class="mini" onclick="viewAccess()">← 回我的存取</button>
+    <h3>${esc(w.name)} <span class="pill ${w.permission}">${PERM_LABEL[w.permission]}</span></h3>
+    <div style="color:var(--dim);font-size:13px">${esc(w.description || "")} · 主責群組：${esc(w.ownerGroup || "-")} · 你的權限來自：${esc(w.via.join("、"))}</div>
+    <table><tr><th>類型</th><th>名稱</th><th>主責群組</th><th>狀態</th></tr>
+      ${body.resources.map((r) => `<tr><td>${esc(r.type)}</td><td>${esc(r.name)}</td><td>${esc(r.ownerGroupName || "")}</td><td><span class="st ${r.status}">${esc(r.status || "-")}</span></td></tr>`).join("")}
+    </table>${body.resources.length ? "" : '<div class="empty">此工作站沒有資源</div>'}`;
 }
 
-async function showAudit() {
+// ---------------------------------------------------------------- 探索 / 申請
+async function viewDiscover() {
+  const { body } = await api("/api/discover");
+  const main = document.getElementById("main");
+  main.innerHTML = `
+    <h3>群組（申請加入）</h3>
+    <table><tr><th>群組</th><th>類型</th><th>說明</th><th>成員</th><th></th></tr>
+      ${body.groups.map((g) => `<tr>
+        <td><b>${esc(g.name)}</b> <code>${esc(g.id)}</code></td><td>${esc(g.kind)}</td><td>${esc(g.description || "")}</td><td>${g.memberCount}</td>
+        <td>${g.joined ? '<span class="pill ok">已加入</span>' : g.pending ? '<span class="pill muted">審核中</span>' : (g.joinPolicy === "invite" ? '<span class="pill muted">邀請制</span>' : `<button class="mini" onclick="applyGroup('${g.id}')">申請加入</button>`)}</td>
+      </tr>`).join("")}
+    </table>
+    <h3>工作站（用你管理的群組申請存取）</h3>
+    ${body.myManagedGroups.length ? "" : '<div class="notice">你目前沒有可管理的群組 — 不能代群組申請 workspace 存取。</div>'}
+    <table><tr><th>工作站</th><th>類型</th><th>主責群組</th><th></th></tr>
+      ${body.workspaces.map((w) => `<tr>
+        <td><b>${esc(w.name)}</b></td><td>${esc(w.kind)}</td><td>${esc(w.ownerGroup || "")}</td>
+        <td>${w.visible ? '<span class="pill ok">已可見</span>' : w.pending ? '<span class="pill muted">審核中</span>' : `<button class="mini" onclick="applyWs('${w.id}')">申請存取</button>`}</td>
+      </tr>`).join("")}
+    </table>`;
+}
+
+async function applyGroup(id) {
+  const reason = prompt("申請原因（給群組 owner 看）：", "想加入這個群組");
+  if (reason === null) return;
+  const { body } = await api("/api/requests", { method: "POST", body: JSON.stringify({ target_type: "group", target_id: id, requested_role: "member", reason }) });
+  alert(body.ok ? (body.auto ? "✅ 已自動核准（open policy）" : "✅ 申請已送出，等群組 owner 審核") : "❌ " + body.error);
+  viewDiscover();
+}
+async function applyWs(id) {
+  const d = await api("/api/discover");
+  const mg = d.body.myManagedGroups;
+  if (!mg.length) return alert("你沒有可管理的群組");
+  const gid = mg.length === 1 ? mg[0].id : prompt("用哪個群組申請？\n" + mg.map((g) => `${g.id} = ${g.name}`).join("\n"), mg[0].id);
+  if (!gid) return;
+  const perm = prompt("要什麼權限？view / operate / approve / admin", "view");
+  if (!perm) return;
+  const reason = prompt("原因：", "需要存取此工作站的資料");
+  if (reason === null) return;
+  const { body } = await api("/api/requests", { method: "POST", body: JSON.stringify({ target_type: "workspace", target_id: id, group_id: gid, requested_role: perm, reason }) });
+  alert(body.ok ? "✅ 申請已送出，等該工作站主責群組審核" : "❌ " + body.error);
+  viewDiscover();
+}
+
+// ---------------------------------------------------------------- 我的群組
+async function viewGroups() {
+  const main = document.getElementById("main");
+  if (!ME.groups.length) { main.innerHTML = `<h3>我的群組</h3><div class="empty">你還沒有加入任何群組</div>`; return; }
+  main.innerHTML = `<h3>我的群組（${ME.groups.length}）</h3>
+    <table><tr><th>群組</th><th>我的角色</th><th>狀態</th><th></th></tr>
+      ${ME.groups.map((g) => `<tr><td><b>${esc(g.name)}</b></td><td>${esc(g.role)}</td>
+        <td>${g.temporary ? `<span class="pill approve">臨時 ⏱ 至 ${esc((g.expiresAt || "").slice(0, 16).replace("T", " "))}</span>` : '<span class="pill ok">常設</span>'}</td>
+        <td>${(g.role === "owner" || g.role === "manager" || ME.user.isPlatformAdmin) ? `<button class="mini" onclick="renderTabs('manage');go('manage')">管理</button>` : ""}</td></tr>`).join("")}
+    </table>
+    <div class="notice">你的能力：${ME.capabilities.map((c) => `<code>${esc(c)}</code>`).join(" ")}</div>`;
+}
+
+// ---------------------------------------------------------------- 管理群組
+let MANAGED = null;
+async function viewManage() {
+  const main = document.getElementById("main");
+  const d = await api("/api/discover");
+  const mg = d.body.myManagedGroups;
+  if (!mg.length) { main.innerHTML = `<h3>管理群組</h3><div class="empty">你不是任何群組的 owner/manager</div>`; return; }
+  const cur = MANAGED && mg.find((g) => g.id === MANAGED) ? MANAGED : mg[0].id;
+  const { body } = await api("/api/manage/" + encodeURIComponent(cur));
+  main.innerHTML = `
+    <h3>管理群組</h3>
+    <select class="sel" onchange="MANAGED=this.value;viewManage()">${mg.map((g) => `<option value="${g.id}" ${g.id === cur ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select>
+    <div class="notice">自己是 owner/manager 的群組，可以自己審申請、自己加減成員、自己把群組授權到工作站（含 TTL）。這就是「由他們自己維護權限」。</div>
+
+    <div class="row2">
+      <div>
+        <h3>待審：加入申請（${body.pendingJoin.length}）</h3>
+        ${body.pendingJoin.length ? `<table><tr><th>申請人</th><th>原因</th><th></th></tr>${body.pendingJoin.map((r) => `<tr><td>${esc(r.display_name)}</td><td>${esc(r.reason || "")}</td><td><button class="mini ok" onclick="decide('${r.id}','approve')">核准</button> <button class="mini no" onclick="decide('${r.id}','reject')">駁回</button></td></tr>`).join("")}</table>` : '<div class="empty">沒有待審的加入申請</div>'}
+      </div>
+      <div>
+        <h3>待審：工作站存取申請（${body.pendingAcl.length}）</h3>
+        ${body.pendingAcl.length ? `<table><tr><th>申請人</th><th>要什麼</th><th></th></tr>${body.pendingAcl.map((r) => `<tr><td>${esc(r.display_name)}</td><td>${esc(r.targetName)} · ${PERM_LABEL[r.requested_role] || esc(r.requested_role)}</td><td><button class="mini ok" onclick="decide('${r.id}','approve')">核准</button> <button class="mini no" onclick="decide('${r.id}','reject')">駁回</button></td></tr>`).join("")}</table>` : '<div class="empty">沒有待審的存取申請</div>'}
+      </div>
+    </div>
+
+    <h3>成員（${body.members.length}）</h3>
+    <table><tr><th>姓名</th><th>角色</th><th>狀態</th><th></th></tr>
+      ${body.members.map((m) => `<tr><td>${esc(m.display_name)}</td><td>${esc(m.member_role)}</td><td>${m.temporary ? `<span class="pill approve">臨時 ⏱ ${esc((m.expires_at || "").slice(0, 10))}</span>` : '<span class="pill ok">常設</span>'}</td>
+        <td><button class="mini" onclick="rmMember('${m.user_id}')">移除</button></td></tr>`).join("")}
+    </table>
+    <div style="margin-top:8px">
+      <select id="addUser" class="sel">${body.allUsers.map((u) => `<option value="${u.id}">${esc(u.display_name)}</option>`).join("")}</select>
+      <select id="addRole" class="sel"><option value="member">member</option><option value="manager">manager</option></select>
+      <button class="mini" onclick="addMember()">＋ 加入成員</button>
+    </div>
+
+    <h3>本群組的工作站授權（${body.acls.length}）</h3>
+    <table><tr><th>工作站</th><th>權限</th><th>狀態</th><th></th></tr>
+      ${body.acls.map((a) => `<tr><td>${esc(a.name)}</td><td><span class="pill ${a.permission}">${PERM_LABEL[a.permission]}</span></td><td>${a.temporary ? `<span class="pill approve">TTL ⏱ ${esc((a.expires_at || "").slice(0, 10))}</span>` : '<span class="pill ok">常設</span>'}</td>
+        <td><button class="mini no" onclick="revokeAcl('${a.workspace_id}')">回收</button></td></tr>`).join("") || '<tr><td colspan="4" class="empty">尚無授權</td></tr>'}
+    </table>
+    <div style="margin-top:8px">
+      <select id="aclWs" class="sel">${body.allWorkspaces.map((w) => `<option value="${w.id}">${esc(w.name)}</option>`).join("")}</select>
+      <select id="aclPerm" class="sel"><option value="view">view</option><option value="operate">operate</option><option value="approve">approve</option><option value="admin">admin</option></select>
+      <button class="mini" onclick="grantAcl()">＋ 授權</button>
+    </div>`;
+}
+
+async function decide(id, decision) {
+  const note = decision === "reject" ? (prompt("駁回理由（選填）：", "") || "") : "";
+  const { body } = await api(`/api/requests/${encodeURIComponent(id)}/decide`, { method: "POST", body: JSON.stringify({ decision, note }) });
+  if (!body.ok) alert("❌ " + body.error);
+  viewManage();
+}
+async function addMember() {
+  const user_id = document.getElementById("addUser").value, member_role = document.getElementById("addRole").value;
+  const { body } = await api(`/api/manage/${encodeURIComponent(MANAGED)}/members`, { method: "POST", body: JSON.stringify({ user_id, member_role }) });
+  if (!body.ok) alert("❌ " + body.error);
+  viewManage();
+}
+async function rmMember(userId) {
+  if (!confirm("移除此成員？")) return;
+  const { body } = await api(`/api/manage/${encodeURIComponent(MANAGED)}/members/${encodeURIComponent(userId)}`, { method: "DELETE" });
+  if (!body.ok) alert("❌ " + body.error);
+  viewManage();
+}
+async function grantAcl() {
+  const workspace_id = document.getElementById("aclWs").value, permission = document.getElementById("aclPerm").value;
+  const { body } = await api(`/api/manage/${encodeURIComponent(MANAGED)}/acl`, { method: "POST", body: JSON.stringify({ workspace_id, permission }) });
+  if (!body.ok) alert("❌ " + body.error);
+  viewManage();
+}
+async function revokeAcl(wsid) {
+  if (!confirm("回收此工作站的授權？")) return;
+  const { body } = await api(`/api/manage/${encodeURIComponent(MANAGED)}/acl/${encodeURIComponent(wsid)}`, { method: "DELETE" });
+  if (!body.ok) alert("❌ " + body.error);
+  viewManage();
+}
+
+// ---------------------------------------------------------------- 稽核
+async function viewAudit() {
   const { status, body } = await api("/api/audit");
   const main = document.getElementById("main");
-  if (status !== 200) { main.innerHTML = `<div class="notice warn">${body.error}</div>`; return; }
-  main.innerHTML = `
-    <h3>稽核日誌（最近 100 筆）</h3>
-    <div style="color:var(--dim);font-size:12.5px">誰、何時、看了/做了什麼、結果 — 不可變留痕。</div>
-    <table>
-      <tr><th>時間</th><th>人員</th><th>動作</th><th>目標</th><th>詳細</th><th>結果</th></tr>
-      ${body.entries.map((e) => `<tr><td>${(e.ts || "").replace("T", " ").slice(0, 19)}</td><td>${e.display_name || "-"}</td><td>${e.action}</td><td>${e.target || ""}</td><td>${e.detail || ""}</td><td><span class="st ${e.result === "ok" ? "Healthy" : "Warning"}">${e.result}</span></td></tr>`).join("")}
+  if (status !== 200) { main.innerHTML = `<div class="notice warn">${esc(body.error)}</div>`; return; }
+  main.innerHTML = `<h3>稽核日誌（最近 150 筆）</h3>
+    <div style="color:var(--dim);font-size:12.5px">誰、何時、申請/核准/授權了什麼 — 不可變留痕。</div>
+    <table><tr><th>時間</th><th>人員</th><th>動作</th><th>目標</th><th>詳細</th><th>結果</th></tr>
+      ${body.entries.map((e) => `<tr><td>${esc((e.ts || "").replace("T", " ").slice(0, 19))}</td><td>${esc(e.display_name || "-")}</td><td>${esc(e.action)}</td><td>${esc(e.target || "")}</td><td>${esc(e.detail || "")}</td><td><span class="st ${e.result === "ok" ? "Healthy" : "Warning"}">${esc(e.result)}</span></td></tr>`).join("")}
     </table>`;
 }
 

@@ -21,6 +21,29 @@ Batch 不是 Job，是「佇列 + 常駐 worker」。這同時是最單純（調
 **排程型工作怎麼辦？** 不用 CronJob —— 用 DB 驅動排程：`scheduled_jobs` 表存下次執行時間，
 worker 內建一個每分鐘的小 loop 把到期的排進 `jobs`。叢集資源零變化，行為可稽核。
 
+## 1.5 三層式本體（SRE agentic web app）
+
+| 層 | 內容 | 通訊 |
+|---|---|---|
+| **1. Web AP（呈現層）** | `web`：SPA（nginx）+ `api` 的 `/api` 反向代理 | 只有這層對外（Ingress） |
+| **2. Application（執行層）** | `api`（agent runtime + SSE 串流）、`mcp-*`（工具）、`worker`（queue 消費者） | 純內網 |
+| **3. Data（資料層）** | `pgbouncer` → `postgres`（含 `jobs` queue 表、GAM、audit） | 純內網，**只有 pgbouncer 能連 postgres** |
+
+**對照雲端 PAAW 的四部分：**
+
+| 雲端 PAAW | SRE agentic web app |
+|---|---|
+| Web AP | 層 1：Web AP |
+| EM 協調執行器 | 層 2：`api`（agent runtime） |
+| Coding 執行環境 | **無** —— 見下 |
+| 持久化資料 | 層 3：`postgres` |
+| （工具） | 層 2：`mcp-*`（SRE 把工具獨立成微服務） |
+
+**為什麼 SRE app 三層就夠、不需要「Coding 執行環境」：**
+PAAW 的 agent 要**寫程式、跑 build、開 terminal**，所以需要一個獨立的沙箱執行環境；
+SRE app 的 agent 只做「讀 / 查 / 關聯 / 開單 / 通知」，全部透過 `mcp-*` 工具服務完成，
+不需要在叢集裡跑使用者產生的程式碼 → **少一層，也少一整個最大攻擊面**。
+
 ## 2. 元件（就這 7 個）
 
 | 元件 | 型態 | 數量 | 對外 |

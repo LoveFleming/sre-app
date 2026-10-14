@@ -257,3 +257,30 @@ agent runtime 一定有一條「call LLM」的線，而且是**最敏感的一�
   - 能自架就自架（vLLM 放叢集內 → prompt 不出門、成本自控）
   - 用外部 API 時：盡量去識別化、限制送出的內容、稽核每一次呼叫
 - 外部 LLM 與外部 MCP **共用同一個 Egress Gateway**，但**各自獨立的 allowlist 規則**
+
+## 5.9 worker 的紀律：純工具 → 不需要 sandbox
+
+**worker 的 agent loop 只用 tool（找 root cause / 找答案 / 通知），不執行本機程式碼。**
+
+所以「要不要 sandbox」的判準只有一句：
+> **有沒有在執行「產生的程式碼」？沒有 → 不用 MXC。**（SRE worker = 沒有）
+
+**但「只用 tool」不等於「沒危險」** —— 風險來自兩處，不是執行：
+
+1. **注入（worker 最高風險）**：worker 吞的都是不可信內容（ES log、k8s event、告警文字、工單），
+   這些進 LLM context → 可在裡面藏指令叫它去用工具。**worker 比 api 更容易中**（大量吞機器內容）。
+2. **工具就是危險面**：`mcp-k8s` 刪 deployment？`mcp-es` 刪 index？通知工具狂洗頻？值班工具半夜叫醒全部人？
+
+**兩條必須 enforce 的紀律：**
+
+1. **worker 工具集只給 read / query / analyze / notify** —— **不給通用 exec/bash**，不給破壞性工具
+   （真要給，就必須 GAM `approve` + 人為確認；無人值守的 batch 預設**唯讀**）
+2. **工具自己不信任呼叫者**：`mcp-k8s` 用**唯讀 + 限定 namespace 的 SA**；每個 pool 各自 SA
+
+**另外：**
+- 抓回來的內容一律當**資料**不當**指令**（包成 data 區塊）；**不能讓工具回覆單獨觸發寫入工具**
+- 每 group 設 tool 呼叫 rate limit（防 runaway loop 燒錢/DoS）+ 每次 tool call 寫 audit
+- ⚠️ **一旦給 worker 一個通用 shell tool，就等於把 sandbox 的洞直接開出去** —— 這是唯一紅線
+
+**發訊息到 tchat：** 建議也做成**一個 tool（notify / mcp-chat）**，走同一套授權 + rate limit + audit；
+否則「通知」會變成唯一沒被治理的出口（洗頻 / 洩漏管道）。

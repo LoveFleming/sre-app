@@ -232,3 +232,15 @@ Namespace：`sre-app`（全部）、`sre-infra`（KEDA / 監控）。**沒有 sr
 > 一句話：**內網 MCP 是工具；外部 MCP 是「半個外部使用者」—— 當成不可信來源處理。**
 
 > 圖：`docs/architecture-diagram.html`（可開瀏覽器）＋ `docs/architecture-diagram.png`
+
+## 5.7 MXC 沙箱放哪？（已畫進圖）
+
+MXC（`@microsoft/mxc-sdk`）＝ 跑**不可信程式碼**的行程級沙箱。在 SRE app 裡它屬 **層 2**，
+但是一個**獨立隔離圈**，不是普通 pod：
+
+- 只有 `worker-heavy` 要執行「產生的程式碼 / runbook 腳本」時才送進去
+- 沙箱內：**無叢集憑證、唯讀 rootfs、預設無網路、資源上限、用完即丟**
+- 極少數要連外 → 也只能走 **Egress Gateway** 且另設 allowlist
+- 它是 SRE app **唯一**允許執行「不是我們自己寫的程式碼」的地方
+
+> 若之後 SRE app 也要有 coding 能力，這個沙箱就是未來「Coding 執行環境」的雛形（預設不開）。

@@ -244,3 +244,15 @@ MXC（`@microsoft/mxc-sdk`）＝ 跑**不可信程式碼**的行程級沙箱。�
 - 它是 SRE app **唯一**允許執行「不是我們自己寫的程式碼」的地方
 
 > 若之後 SRE app 也要有 coding 能力，這個沙箱就是未來「Coding 執行環境」的雛形（預設不開）。
+
+## 5.8 LLM 呼叫路徑（補進圖）
+
+agent runtime 一定有一條「call LLM」的線，而且是**最敏感的一條出口**：
+
+- `api` 與 `worker` 都要呼叫 LLM（agent 的核心），**沙箱與 mcp 不需要**
+- **一律走 Egress Gateway**（唯一出口）→ 記 allowlist（只放行核可的 LLM endpoint）+ 稽核
+- **LLM key 只給 `api` / `worker`**（其他元件沒有）
+- ⚠️ **prompt 會含內部資料**（log、拓樸、使用者輸入）→ 這條線是**資料外洩第一風險**：
+  - 能自架就自架（vLLM 放叢集內 → prompt 不出門、成本自控）
+  - 用外部 API 時：盡量去識別化、限制送出的內容、稽核每一次呼叫
+- 外部 LLM 與外部 MCP **共用同一個 Egress Gateway**，但**各自獨立的 allowlist 規則**

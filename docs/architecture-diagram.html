@@ -21,7 +21,7 @@
   .zone{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:6 5;opacity:.75;}
 </style>
 <main>
-<svg viewBox="0 0 1000 1240" role="img" aria-label="SRE agentic web app architecture with MXC sandbox">
+<svg viewBox="0 0 1000 1336" role="img" aria-label="SRE agentic web app architecture with MXC sandbox">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
@@ -46,7 +46,7 @@
 
   <rect class="node process" x="100" y="396" width="240" height="70" rx="8"/>
   <text class="label" x="220" y="424" text-anchor="middle">api｜agent runtime</text>
-  <text class="small" x="220" y="446" text-anchor="middle">SSE 串流 · tool loop · 授權</text>
+  <text class="small" x="220" y="446" text-anchor="middle">SSE · tool loop · LLM 呼叫 · 授權</text>
 
   <rect class="node process" x="100" y="492" width="240" height="54" rx="8"/>
   <text class="label" x="220" y="524" text-anchor="middle">worker-light（秒級）</text>
@@ -86,14 +86,19 @@
   <text class="small" x="670" y="948" text-anchor="middle">GAM · jobs（queue 表）· audit</text>
   <text class="small" x="160" y="992">只有 pgbouncer 能連 postgres</text>
 
-  <rect class="zone" x="60" y="1050" width="880" height="150" rx="10"/>
-  <text class="small" x="84" y="1074">外部（不可信）</text>
+  <rect class="zone" x="60" y="1050" width="880" height="252" rx="10"/>
+  <text class="small" x="84" y="1074">外部（不可信）· 唯一出口</text>
   <rect class="node external" x="140" y="1094" width="260" height="64" rx="8"/>
   <text class="label" x="270" y="1122" text-anchor="middle">Egress Gateway</text>
   <text class="small" x="270" y="1142" text-anchor="middle">唯一出口 · allowlist · 稽核</text>
   <rect class="node risk" x="580" y="1094" width="300" height="64" rx="8"/>
   <text class="label" x="730" y="1122" text-anchor="middle">外部 MCP（第三方）</text>
   <text class="small" x="730" y="1142" text-anchor="middle">回應 = 不可信輸入（間接注入）</text>
+  <rect class="node external" x="580" y="1190" width="300" height="64" rx="8"/>
+  <text class="label" x="730" y="1218" text-anchor="middle">LLM Provider（外部 API）</text>
+  <text class="small" x="730" y="1238" text-anchor="middle">prompt 含內部資料 = 敏感出口</text>
+  <text class="small" x="140" y="1218">可選：自架 LLM（vLLM）放叢集內</text>
+  <text class="small" x="140" y="1238">→ prompt 不出門、成本自控</text>
 
   <path class="edge" marker-end="url(#a)" d="M500 108 V 124"/>
   <path class="edge" marker-end="url(#a)" d="M500 170 V 240"/>
@@ -108,8 +113,10 @@
   <text class="small" x="228" y="824">api / worker → pgbouncer</text>
   <path class="edge" marker-end="url(#a)" d="M360 932 H 520"/>
   <path class="edge" marker-end="url(#a)" d="M100 430 H 40 V 1126 H 140"/>
-  <text class="small" x="46" y="900">呼叫外部 MCP</text>
+  <text class="small" x="46" y="1010">api / worker → Egress</text>
+  <path class="dash" d="M100 587 H 40"/>
   <path class="edge" marker-end="url(#a)" d="M400 1126 H 580"/>
+  <path class="edge" marker-end="url(#a)" d="M400 1222 H 580"/>
   <text class="small" x="430" y="1114">回程同路徑</text>
 </svg>
 </main>

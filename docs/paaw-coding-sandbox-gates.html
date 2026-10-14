@@ -1,0 +1,139 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PAAW Coding App — MXC 沙箱 與 Script Gate 位置</title>
+<style>
+  :root{color-scheme:light;
+    --bg:#f8fafc;--fg:#172033;--muted:#5b6475;--line:#64748b;
+    --neutral:#e2e8f0;--input:#bfdbfe;--process:#c7d2fe;--storage:#99f6e4;--external:#fde68a;--risk:#fecaca;}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.4 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  main{max-width:1180px;margin:28px auto;padding:0 20px;}
+  svg{width:100%;height:auto;display:block;}
+  .title{font-size:19px;font-weight:650;fill:var(--fg);}
+  .colhead{font-size:13px;font-weight:650;fill:var(--muted);}
+  .label{font-size:14.5px;font-weight:600;fill:var(--fg);}
+  .small{font-size:11.5px;fill:var(--muted);}
+  .mono{font-size:11.5px;fill:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .node{stroke:var(--line);stroke-width:1;}
+  .neutral{fill:var(--neutral);}.input{fill:var(--input);}.process{fill:var(--process);}
+  .storage{fill:var(--storage);}.external{fill:var(--external);}.risk{fill:var(--risk);}
+  .edge{stroke:var(--line);stroke-width:1.5;fill:none;}
+  .dash{stroke:var(--line);stroke-width:1.4;fill:none;stroke-dasharray:5 4;}
+  .lane{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:6 5;opacity:.7;}
+</style>
+<main>
+<svg viewBox="0 0 1140 950" role="img" aria-label="PAAW coding app — MXC sandbox and script gate positions">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <text class="title" x="40" y="32">PAAW Coding App — 🛡 Script Gate 與 ⭐ MXC 沙箱 的位置</text>
+
+  <rect class="node neutral" x="40" y="56" width="1060" height="54" rx="8"/>
+  <text class="label" x="570" y="80" text-anchor="middle">🤖 agent loop（paaw-agent-loop.mjs）</text>
+  <text class="small" x="570" y="99" text-anchor="middle">LLM function-calling 決定要呼叫哪個工具</text>
+
+  <text class="colhead" x="210" y="146" text-anchor="middle">① 寫檔路徑</text>
+  <text class="colhead" x="570" y="146" text-anchor="middle">② 執行路徑（bash）</text>
+  <text class="colhead" x="930" y="146" text-anchor="middle">③ 環境安裝（env_exec）</text>
+
+  <rect class="node process" x="40" y="160" width="340" height="56" rx="8"/>
+  <text class="label" x="210" y="193" text-anchor="middle">write_file / edit_file</text>
+
+  <rect class="node external" x="40" y="248" width="340" height="80" rx="8"/>
+  <text class="label" x="210" y="276" text-anchor="middle">🛡 script-guard A</text>
+  <text class="small" x="210" y="298" text-anchor="middle">執行入口檔攔截（AI 不可寫）</text>
+  <text class="small" x="210" y="316" text-anchor="middle">git hooks / launchd / shell rc / ssh</text>
+
+  <rect class="node process" x="40" y="360" width="340" height="56" rx="8"/>
+  <text class="label" x="210" y="384" text-anchor="middle">寫入磁碟</text>
+  <text class="small" x="210" y="404" text-anchor="middle">一般程式碼檔案直接通過</text>
+
+  <rect class="node process" x="400" y="160" width="340" height="56" rx="8"/>
+  <text class="label" x="570" y="193" text-anchor="middle">bash</text>
+
+  <rect class="node external" x="400" y="248" width="340" height="64" rx="8"/>
+  <text class="label" x="570" y="274" text-anchor="middle">🛡 shell-guard</text>
+  <text class="small" x="570" y="296" text-anchor="middle">RU 程序範圍鐵律（不可碰 PAAW 本體）</text>
+
+  <rect class="node external" x="400" y="344" width="340" height="76" rx="8"/>
+  <text class="label" x="570" y="370" text-anchor="middle">🛡 script-guard C</text>
+  <text class="small" x="570" y="391" text-anchor="middle">危險 pattern 掃描</text>
+  <text class="small" x="570" y="409" text-anchor="middle">（正常 coding 零摩擦）</text>
+
+  <rect class="node external" x="430" y="452" width="280" height="72" rx="8"/>
+  <text class="label" x="570" y="478" text-anchor="middle">⏳ 審批卡 exec-approvals</text>
+  <text class="small" x="570" y="500" text-anchor="middle">✅ 一次 / ♾️ 永遠 / ❌ 拒絕</text>
+  <text class="small" x="570" y="518" text-anchor="middle">agent 真的暫停，等你的決定</text>
+
+  <rect class="node process" x="400" y="556" width="340" height="56" rx="8"/>
+  <text class="label" x="570" y="589" text-anchor="middle">runShell()（paaw-agent-loop）</text>
+
+  <rect class="node input" x="400" y="644" width="340" height="80" rx="8"/>
+  <text class="label" x="570" y="672" text-anchor="middle">⭐ MXC 沙箱</text>
+  <text class="small" x="570" y="694" text-anchor="middle">execSandboxed · v4 單後端（跨平台）</text>
+  <text class="small" x="570" y="712" text-anchor="middle">fs allowlist · egress deny-by-default</text>
+
+  <rect class="node process" x="400" y="756" width="340" height="64" rx="8"/>
+  <text class="label" x="570" y="782" text-anchor="middle">scanCommandOutput（輸出掃描）</text>
+  <text class="small" x="570" y="803" text-anchor="middle">白名單 / 沙箱命中 → 稽核 + 通知</text>
+
+  <rect class="node process" x="760" y="160" width="340" height="56" rx="8"/>
+  <text class="label" x="930" y="193" text-anchor="middle">env_exec（npm / pip 安裝）</text>
+
+  <rect class="node external" x="760" y="248" width="340" height="80" rx="8"/>
+  <text class="label" x="930" y="276" text-anchor="middle">🛡 script-guard B</text>
+  <text class="small" x="930" y="298" text-anchor="middle">npm 延遲執行防護</text>
+  <text class="small" x="930" y="316" text-anchor="middle">scanScriptContent + package.json</text>
+
+  <rect class="node input" x="760" y="360" width="340" height="80" rx="8"/>
+  <text class="label" x="930" y="388" text-anchor="middle">⭐ MXC 沙箱</text>
+  <text class="small" x="930" y="410" text-anchor="middle">egress 白名單</text>
+  <text class="small" x="930" y="428" text-anchor="middle">npm / pip / git</text>
+
+  <rect class="node storage" x="40" y="480" width="340" height="76" rx="8"/>
+  <text class="label" x="210" y="508" text-anchor="middle">🔴 稽核 audit-log</text>
+  <text class="small" x="210" y="530" text-anchor="middle">script_guard / approval / network</text>
+  <text class="small" x="210" y="548" text-anchor="middle">→ ES paaw-audit-*（可事後追）</text>
+
+  <rect class="node risk" x="760" y="480" width="340" height="76" rx="8"/>
+  <text class="label" x="930" y="508" text-anchor="middle">🛠 開發模式（security-mode）</text>
+  <text class="small" x="930" y="530" text-anchor="middle">總開關：略過審批 + 沙箱</text>
+  <text class="small" x="930" y="548" text-anchor="middle">影響 script-guard C / 審批 / MXC</text>
+
+  <text class="small" x="400" y="845">MXC 不可用（未裝 / 開發模式 / PAAW_SANDBOX=off）→ 退回原樣執行（proc-ledger），pattern 掃描仍在</text>
+  <text class="small" x="400" y="866">逃生口：PAAW_SANDBOX=off（debug）· ⛔ 通用 shell 一律經這條鏈，沒有繞道</text>
+
+  <path class="edge" marker-end="url(#a)" d="M210 110 V 160"/>
+  <path class="edge" marker-end="url(#a)" d="M570 110 V 160"/>
+  <path class="edge" marker-end="url(#a)" d="M930 110 V 160"/>
+  <path class="edge" marker-end="url(#a)" d="M210 216 V 248"/>
+  <path class="edge" marker-end="url(#a)" d="M210 328 V 360"/>
+  <path class="edge" marker-end="url(#a)" d="M570 216 V 248"/>
+  <path class="edge" marker-end="url(#a)" d="M570 312 V 344"/>
+  <path class="edge" marker-end="url(#a)" d="M620 420 V 556"/>
+  <text class="small" x="628" y="432">安全 →</text>
+  <path class="edge" marker-end="url(#a)" d="M500 420 V 452"/>
+  <text class="small" x="410" y="440">危險 →</text>
+  <path class="edge" marker-end="url(#a)" d="M520 524 V 556"/>
+  <path class="edge" marker-end="url(#a)" d="M570 612 V 644"/>
+  <path class="edge" marker-end="url(#a)" d="M570 724 V 756"/>
+  <path class="edge" marker-end="url(#a)" d="M930 216 V 248"/>
+  <path class="edge" marker-end="url(#a)" d="M930 328 V 360"/>
+  <path class="dash" marker-end="url(#a)" d="M430 488 H 380"/>
+  <path class="dash" marker-end="url(#a)" d="M740 684 H 750 V 518 H 760"/>
+
+  <rect class="node external" x="40" y="890" width="14" height="14"/>
+  <text class="small" x="62" y="902">Script Gate（攔截 / 審批）</text>
+  <rect class="node input" x="280" y="890" width="14" height="14"/>
+  <text class="small" x="302" y="902">⭐ MXC 沙箱（執行隔離）</text>
+  <rect class="node process" x="500" y="890" width="14" height="14"/>
+  <text class="small" x="522" y="902">工具 / 流程</text>
+  <rect class="node storage" x="650" y="890" width="14" height="14"/>
+  <text class="small" x="672" y="902">稽核</text>
+  <rect class="node risk" x="760" y="890" width="14" height="14"/>
+  <text class="small" x="782" y="902">開發模式（旁路）</text>
+</svg>
+</main>

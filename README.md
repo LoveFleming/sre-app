@@ -28,6 +28,10 @@ npm run preview  # 預覽 production build
 | `src/App.tsx` | SRE 主體（6 頁：總覽 / 自動巡檢 / Grafana 監控 / 異常事件 / AI Agent 工作區 / 設定）|
 | `src/style.css` | 全部樣式（獨立 app，無前綴污染問題）|
 
+## 文件
+
+- [`docs/platform-org-permissions.md`](docs/platform-org-permissions.md) — Platform 定位的組織／權限架構設計（處→部門→課、Capability × DataScope × Action）
+
 ## 用 PAAW coding app 開發
 
 1. 先 clone 這個 repo（或直接指到本機目錄）

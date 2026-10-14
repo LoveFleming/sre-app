@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SRE Agentic Web App — K8s 架構</title>
+<title>SRE Agentic Web App — K8s 架構（含 MXC 沙箱）</title>
 <style>
   :root{color-scheme:light;
     --bg:#f8fafc;--fg:#172033;--muted:#5b6475;--line:#64748b;
@@ -21,13 +21,13 @@
   .zone{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:6 5;opacity:.75;}
 </style>
 <main>
-<svg viewBox="0 0 1000 1170" role="img" aria-label="SRE agentic web app architecture">
+<svg viewBox="0 0 1000 1240" role="img" aria-label="SRE agentic web app architecture with MXC sandbox">
   <defs>
     <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
     </marker>
   </defs>
-  <text class="title" x="60" y="30">SRE Agentic Web App — K8s 架構（三層式 · 零 k8s Job）</text>
+  <text class="title" x="60" y="30">SRE Agentic Web App — K8s 架構（三層式 · 零 k8s Job · 含 MXC 沙箱）</text>
 
   <rect class="node external" x="400" y="60" width="200" height="48" rx="8"/>
   <text class="label" x="500" y="90" text-anchor="middle">瀏覽器 · 使用者</text>
@@ -41,7 +41,7 @@
   <text class="label" x="500" y="266" text-anchor="middle">web（SPA + nginx）</text>
   <text class="small" x="500" y="286" text-anchor="middle">靜態 · 唯一對外入口</text>
 
-  <rect class="zone" x="60" y="352" width="880" height="406" rx="10"/>
+  <rect class="zone" x="60" y="352" width="880" height="478" rx="10"/>
   <text class="small" x="84" y="376">層 2｜Application（執行 · 純內網 · NetworkPolicy default-deny）</text>
 
   <rect class="node process" x="100" y="396" width="240" height="70" rx="8"/>
@@ -54,8 +54,12 @@
   <rect class="node process" x="100" y="560" width="240" height="54" rx="8"/>
   <text class="label" x="220" y="592" text-anchor="middle">worker-heavy（長巡檢）</text>
 
-  <text class="small" x="100" y="644">常駐 pool（不是 k8s Job）· 單 pod 併發 20~50 job</text>
-  <text class="small" x="100" y="664">lease 心跳續租 · max_runtime · 分輕/重池</text>
+  <rect class="node risk" x="100" y="646" width="240" height="64" rx="8"/>
+  <text class="label" x="220" y="672" text-anchor="middle">mxc-sandbox</text>
+  <text class="small" x="220" y="692" text-anchor="middle">不可信程式碼執行（隔離）</text>
+
+  <text class="small" x="100" y="744">產生的程式碼只在這裡跑 · 無叢集憑證</text>
+  <text class="small" x="100" y="764">唯讀 rootfs · 預設無網路 · 資源上限 · 用完即丟</text>
 
   <text class="small" x="620" y="386">MCP 工具微服務（只 ClusterIP）</text>
   <rect class="node process" x="620" y="400" width="280" height="50" rx="8"/>
@@ -69,25 +73,27 @@
 
   <text class="small" x="620" y="604">各自 ServiceAccount · 工具自己做授權</text>
   <text class="small" x="620" y="624">不信任呼叫者 · 破壞性動作要 approve</text>
+  <text class="small" x="620" y="690">工具在叢集外？一律走 Egress Gateway</text>
+  <text class="small" x="620" y="710">工具回應 = 不可信輸入（間接注入）</text>
 
-  <rect class="zone" x="60" y="786" width="880" height="170" rx="10"/>
-  <text class="small" x="84" y="810">層 3｜Data</text>
-  <rect class="node storage" x="160" y="836" width="200" height="64" rx="8"/>
-  <text class="label" x="260" y="864" text-anchor="middle">pgbouncer</text>
-  <text class="small" x="260" y="884" text-anchor="middle">連線池（必須）</text>
-  <rect class="node storage" x="520" y="836" width="300" height="64" rx="8"/>
-  <text class="label" x="670" y="864" text-anchor="middle">postgres</text>
-  <text class="small" x="670" y="884" text-anchor="middle">GAM · jobs（queue 表）· audit</text>
-  <text class="small" x="160" y="928">只有 pgbouncer 能連 postgres</text>
+  <rect class="zone" x="60" y="852" width="880" height="170" rx="10"/>
+  <text class="small" x="84" y="876">層 3｜Data</text>
+  <rect class="node storage" x="160" y="900" width="200" height="64" rx="8"/>
+  <text class="label" x="260" y="928" text-anchor="middle">pgbouncer</text>
+  <text class="small" x="260" y="948" text-anchor="middle">連線池（必須）</text>
+  <rect class="node storage" x="520" y="900" width="300" height="64" rx="8"/>
+  <text class="label" x="670" y="928" text-anchor="middle">postgres</text>
+  <text class="small" x="670" y="948" text-anchor="middle">GAM · jobs（queue 表）· audit</text>
+  <text class="small" x="160" y="992">只有 pgbouncer 能連 postgres</text>
 
-  <rect class="zone" x="60" y="984" width="880" height="150" rx="10"/>
-  <text class="small" x="84" y="1008">外部（不可信）</text>
-  <rect class="node external" x="140" y="1030" width="260" height="64" rx="8"/>
-  <text class="label" x="270" y="1058" text-anchor="middle">Egress Gateway</text>
-  <text class="small" x="270" y="1078" text-anchor="middle">唯一出口 · allowlist · 稽核</text>
-  <rect class="node risk" x="580" y="1030" width="300" height="64" rx="8"/>
-  <text class="label" x="730" y="1058" text-anchor="middle">外部 MCP（第三方）</text>
-  <text class="small" x="730" y="1078" text-anchor="middle">回應 = 不可信輸入（間接注入）</text>
+  <rect class="zone" x="60" y="1050" width="880" height="150" rx="10"/>
+  <text class="small" x="84" y="1074">外部（不可信）</text>
+  <rect class="node external" x="140" y="1094" width="260" height="64" rx="8"/>
+  <text class="label" x="270" y="1122" text-anchor="middle">Egress Gateway</text>
+  <text class="small" x="270" y="1142" text-anchor="middle">唯一出口 · allowlist · 稽核</text>
+  <rect class="node risk" x="580" y="1094" width="300" height="64" rx="8"/>
+  <text class="label" x="730" y="1122" text-anchor="middle">外部 MCP（第三方）</text>
+  <text class="small" x="730" y="1142" text-anchor="middle">回應 = 不可信輸入（間接注入）</text>
 
   <path class="edge" marker-end="url(#a)" d="M500 108 V 124"/>
   <path class="edge" marker-end="url(#a)" d="M500 170 V 240"/>
@@ -96,12 +102,14 @@
   <path class="edge" marker-end="url(#a)" d="M340 420 H 470 V 489 H 620"/>
   <path class="edge" marker-end="url(#a)" d="M340 420 H 520 V 553 H 620"/>
   <path class="dash" marker-end="url(#a)" d="M340 540 H 620"/>
-  <text class="small" x="420" y="532">worker 同路徑</text>
-  <path class="edge" marker-end="url(#a)" d="M220 614 V 800 H 260 V 836"/>
-  <path class="edge" marker-end="url(#a)" d="M360 868 H 520"/>
-  <path class="edge" marker-end="url(#a)" d="M100 430 H 40 V 1062 H 140"/>
-  <text class="small" x="46" y="700">呼叫外部 MCP</text>
-  <path class="edge" marker-end="url(#a)" d="M400 1062 H 580"/>
-  <text class="small" x="430" y="1050">回程同路徑</text>
+  <text class="small" x="420" y="528">worker 同路徑</text>
+  <path class="edge" marker-end="url(#a)" d="M220 614 V 646"/>
+  <path class="edge" marker-end="url(#a)" d="M340 587 H 400 V 872 H 260 V 900"/>
+  <text class="small" x="228" y="824">api / worker → pgbouncer</text>
+  <path class="edge" marker-end="url(#a)" d="M360 932 H 520"/>
+  <path class="edge" marker-end="url(#a)" d="M100 430 H 40 V 1126 H 140"/>
+  <text class="small" x="46" y="900">呼叫外部 MCP</text>
+  <path class="edge" marker-end="url(#a)" d="M400 1126 H 580"/>
+  <text class="small" x="430" y="1114">回程同路徑</text>
 </svg>
 </main>

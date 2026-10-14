@@ -1,0 +1,23 @@
+{
+  "name": "sre-app",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone SRE workspace (React + Vite + TS) — PAAW coding app 可 import 開發",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.468.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.5"
+  }
+}

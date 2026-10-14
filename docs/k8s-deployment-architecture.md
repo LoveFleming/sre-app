@@ -231,7 +231,8 @@ Namespace：`sre-app`（全部）、`sre-infra`（KEDA / 監控）。**沒有 sr
 
 > 一句話：**內網 MCP 是工具；外部 MCP 是「半個外部使用者」—— 當成不可信來源處理。**
 
-> 圖：`docs/architecture-diagram.html`（可開瀏覽器）＋ `docs/architecture-diagram.png`
+> 圖（詳細）：`docs/architecture-diagram.html` / `.png`
+> 圖（主要元件精簡版）：`docs/architecture-diagram-simple.html` / `.png`
 
 ## 5.7 MXC 沙箱放哪？（已畫進圖）
 

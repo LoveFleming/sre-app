@@ -1,0 +1,86 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SRE Agentic Web App — 主要元件</title>
+<style>
+  :root{color-scheme:light;
+    --bg:#f8fafc;--fg:#172033;--muted:#5b6475;--line:#64748b;
+    --neutral:#e2e8f0;--input:#bfdbfe;--process:#c7d2fe;--storage:#99f6e4;--external:#fde68a;--risk:#fecaca;}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.4 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  main{max-width:1040px;margin:28px auto;padding:0 20px;}
+  svg{width:100%;height:auto;display:block;}
+  .title{font-size:19px;font-weight:650;fill:var(--fg);}
+  .label{font-size:15px;font-weight:600;fill:var(--fg);}
+  .small{font-size:11.5px;fill:var(--muted);}
+  .node{stroke:var(--line);stroke-width:1;}
+  .ext{stroke-dasharray:5 4;}
+  .neutral{fill:var(--neutral);}.input{fill:var(--input);}.process{fill:var(--process);}
+  .storage{fill:var(--storage);}.external{fill:var(--external);}.risk{fill:var(--risk);}
+  .edge{stroke:var(--line);stroke-width:1.5;fill:none;}
+  .zone{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:6 5;opacity:.75;}
+</style>
+<main>
+<svg viewBox="0 0 1000 890" role="img" aria-label="SRE agentic web app — main components">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <text class="title" x="60" y="30">SRE Agentic Web App — 主要元件（三層式）</text>
+
+  <rect class="node external" x="400" y="58" width="200" height="46" rx="8"/>
+  <text class="label" x="500" y="86" text-anchor="middle">使用者</text>
+
+  <rect class="node neutral" x="390" y="118" width="220" height="44" rx="8"/>
+  <text class="label" x="500" y="145" text-anchor="middle">Ingress</text>
+
+  <rect class="zone" x="60" y="186" width="880" height="106" rx="10"/>
+  <text class="small" x="84" y="210">層 1｜Web AP</text>
+  <rect class="node input" x="390" y="224" width="220" height="60" rx="8"/>
+  <text class="label" x="500" y="250" text-anchor="middle">web</text>
+  <text class="small" x="500" y="270" text-anchor="middle">SPA + nginx</text>
+
+  <rect class="zone" x="60" y="318" width="880" height="340" rx="10"/>
+  <text class="small" x="84" y="342">層 2｜Application（執行）</text>
+
+  <rect class="node process" x="120" y="366" width="250" height="68" rx="8"/>
+  <text class="label" x="245" y="392" text-anchor="middle">api</text>
+  <text class="small" x="245" y="412" text-anchor="middle">agent runtime · SSE</text>
+
+  <rect class="node process" x="120" y="464" width="250" height="68" rx="8"/>
+  <text class="label" x="245" y="490" text-anchor="middle">worker</text>
+  <text class="small" x="245" y="510" text-anchor="middle">batch pool（常駐）</text>
+
+  <rect class="node risk" x="120" y="560" width="250" height="64" rx="8"/>
+  <text class="label" x="245" y="586" text-anchor="middle">mxc-sandbox</text>
+  <text class="small" x="245" y="606" text-anchor="middle">隔離 · 不可信程式碼</text>
+
+  <rect class="node process" x="600" y="366" width="300" height="68" rx="8"/>
+  <text class="label" x="750" y="392" text-anchor="middle">mcp-*</text>
+  <text class="small" x="750" y="412" text-anchor="middle">k8s / ES / Grafana（工具）</text>
+
+  <rect class="node external ext" x="600" y="464" width="300" height="68" rx="8"/>
+  <text class="label" x="750" y="490" text-anchor="middle">LLM（外部 API）</text>
+  <text class="small" x="750" y="510" text-anchor="middle">敏感出口</text>
+
+  <rect class="zone" x="60" y="690" width="880" height="150" rx="10"/>
+  <text class="small" x="84" y="714">層 3｜Data</text>
+  <rect class="node storage" x="180" y="730" width="220" height="64" rx="8"/>
+  <text class="label" x="290" y="756" text-anchor="middle">pgbouncer</text>
+  <text class="small" x="290" y="776" text-anchor="middle">連線池</text>
+  <rect class="node storage" x="560" y="730" width="280" height="64" rx="8"/>
+  <text class="label" x="700" y="756" text-anchor="middle">postgres</text>
+  <text class="small" x="700" y="776" text-anchor="middle">GAM · queue · audit</text>
+
+  <path class="edge" marker-end="url(#a)" d="M500 104 V 118"/>
+  <path class="edge" marker-end="url(#a)" d="M500 162 V 224"/>
+  <path class="edge" marker-end="url(#a)" d="M460 284 V 300 H 245 V 366"/>
+  <path class="edge" marker-end="url(#a)" d="M370 382 H 600"/>
+  <path class="edge" marker-end="url(#a)" d="M370 414 H 580 V 498 H 600"/>
+  <path class="edge" marker-end="url(#a)" d="M370 498 H 520 V 428 H 600"/>
+  <path class="edge" marker-end="url(#a)" d="M245 532 V 560"/>
+  <path class="edge" marker-end="url(#a)" d="M370 512 H 410 V 700 H 290 V 730"/>
+  <path class="edge" marker-end="url(#a)" d="M400 762 H 560"/>
+</svg>
+</main>

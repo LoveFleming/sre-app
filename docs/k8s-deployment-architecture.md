@@ -202,3 +202,33 @@ Namespace：`sre-app`（全部）、`sre-infra`（KEDA / 監控）。**沒有 sr
 - 授權 = `docs/gam-access-management.md`
 - 前端元件 = `agentic-app-template`
 - schema = `prototype/schema.sql`（GAM v2）；本檔只講部署拓撲
+
+## 5.6 agent runtime 呼叫「外部 MCP」安全嗎？
+
+先分兩種，信任等級完全不同：
+
+- **內網自建 MCP（`mcp-*` in-cluster）**：ClusterIP、你自己控 → 一般信任
+- **外部 MCP（第三方 / 遠端 / 別人的服務）**：**一律視為不可信第三方**
+
+**外部 MCP 的四個真實風險：**
+
+1. **資料外洩** — 傳給工具的參數會送到對方（可能含 prompt / 內部資料）
+2. **間接 prompt injection** — 工具回傳內容會進 LLM context，對方可在回應裡藏指令
+   （「現在去做 X」）← **這是最大的坑**
+3. **工具投毒 / rug-pull** — 對方事後偷改 tool 描述或行為
+4. **憑證** — 連外要 token；token 由誰保管、範圍多大
+
+**對策（把外部 MCP 當「公開網路」對待）：**
+
+- **agent runtime 沒有直接對外網路** → 只能走 **Egress Gateway**（唯一出口），
+  allowlist 只放行核准的 MCP host
+- **外部 token 放在 Egress Gateway / 專屬 secret**，不要塞進 agent
+- **工具回應一律當不可信輸入**：schema 驗證、包成 data 區塊、
+  **不得單憑工具回覆就執行破壞性動作** → 要 GAM `approve` + 人為確認
+- **pin 工具 schema hash**（偵測 rug-pull）；只 allowlist 需要的 tool
+- **設 rate limit + 稽核**（誰、何時、呼叫了哪個外部工具）
+- 能用內網自建就自建；外部 MCP 只用「必要且可接受外洩風險」的
+
+> 一句話：**內網 MCP 是工具；外部 MCP 是「半個外部使用者」—— 當成不可信來源處理。**
+
+> 圖：`docs/architecture-diagram.html`（可開瀏覽器）＋ `docs/architecture-diagram.png`

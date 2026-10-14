@@ -1,0 +1,107 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SRE Agentic Web App — K8s 架構</title>
+<style>
+  :root{color-scheme:light;
+    --bg:#f8fafc;--fg:#172033;--muted:#5b6475;--line:#64748b;
+    --neutral:#e2e8f0;--input:#bfdbfe;--process:#c7d2fe;--storage:#99f6e4;--external:#fde68a;--risk:#fecaca;}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font:14px/1.4 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  main{max-width:1040px;margin:28px auto;padding:0 20px;}
+  svg{width:100%;height:auto;display:block;}
+  .title{font-size:19px;font-weight:650;fill:var(--fg);}
+  .label{font-size:14px;font-weight:600;fill:var(--fg);}
+  .small{font-size:11.5px;fill:var(--muted);}
+  .node{stroke:var(--line);stroke-width:1;}
+  .neutral{fill:var(--neutral);}.input{fill:var(--input);}.process{fill:var(--process);}
+  .storage{fill:var(--storage);}.external{fill:var(--external);}.risk{fill:var(--risk);}
+  .edge{stroke:var(--line);stroke-width:1.5;fill:none;}
+  .dash{stroke:var(--line);stroke-width:1.4;fill:none;stroke-dasharray:5 4;}
+  .zone{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:6 5;opacity:.75;}
+</style>
+<main>
+<svg viewBox="0 0 1000 1170" role="img" aria-label="SRE agentic web app architecture">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <text class="title" x="60" y="30">SRE Agentic Web App — K8s 架構（三層式 · 零 k8s Job）</text>
+
+  <rect class="node external" x="400" y="60" width="200" height="48" rx="8"/>
+  <text class="label" x="500" y="90" text-anchor="middle">瀏覽器 · 使用者</text>
+
+  <rect class="node neutral" x="390" y="124" width="220" height="46" rx="8"/>
+  <text class="label" x="500" y="152" text-anchor="middle">Ingress（nginx · TLS）</text>
+
+  <rect class="zone" x="60" y="198" width="880" height="126" rx="10"/>
+  <text class="small" x="84" y="222">層 1｜Web AP（呈現）</text>
+  <rect class="node input" x="390" y="240" width="220" height="64" rx="8"/>
+  <text class="label" x="500" y="266" text-anchor="middle">web（SPA + nginx）</text>
+  <text class="small" x="500" y="286" text-anchor="middle">靜態 · 唯一對外入口</text>
+
+  <rect class="zone" x="60" y="352" width="880" height="406" rx="10"/>
+  <text class="small" x="84" y="376">層 2｜Application（執行 · 純內網 · NetworkPolicy default-deny）</text>
+
+  <rect class="node process" x="100" y="396" width="240" height="70" rx="8"/>
+  <text class="label" x="220" y="424" text-anchor="middle">api｜agent runtime</text>
+  <text class="small" x="220" y="446" text-anchor="middle">SSE 串流 · tool loop · 授權</text>
+
+  <rect class="node process" x="100" y="492" width="240" height="54" rx="8"/>
+  <text class="label" x="220" y="524" text-anchor="middle">worker-light（秒級）</text>
+
+  <rect class="node process" x="100" y="560" width="240" height="54" rx="8"/>
+  <text class="label" x="220" y="592" text-anchor="middle">worker-heavy（長巡檢）</text>
+
+  <text class="small" x="100" y="644">常駐 pool（不是 k8s Job）· 單 pod 併發 20~50 job</text>
+  <text class="small" x="100" y="664">lease 心跳續租 · max_runtime · 分輕/重池</text>
+
+  <text class="small" x="620" y="386">MCP 工具微服務（只 ClusterIP）</text>
+  <rect class="node process" x="620" y="400" width="280" height="50" rx="8"/>
+  <text class="label" x="760" y="430" text-anchor="middle">mcp-k8s</text>
+
+  <rect class="node process" x="620" y="464" width="280" height="50" rx="8"/>
+  <text class="label" x="760" y="494" text-anchor="middle">mcp-es / mcp-grafana</text>
+
+  <rect class="node process" x="620" y="528" width="280" height="50" rx="8"/>
+  <text class="label" x="760" y="558" text-anchor="middle">mcp-&lt;自建&gt;</text>
+
+  <text class="small" x="620" y="604">各自 ServiceAccount · 工具自己做授權</text>
+  <text class="small" x="620" y="624">不信任呼叫者 · 破壞性動作要 approve</text>
+
+  <rect class="zone" x="60" y="786" width="880" height="170" rx="10"/>
+  <text class="small" x="84" y="810">層 3｜Data</text>
+  <rect class="node storage" x="160" y="836" width="200" height="64" rx="8"/>
+  <text class="label" x="260" y="864" text-anchor="middle">pgbouncer</text>
+  <text class="small" x="260" y="884" text-anchor="middle">連線池（必須）</text>
+  <rect class="node storage" x="520" y="836" width="300" height="64" rx="8"/>
+  <text class="label" x="670" y="864" text-anchor="middle">postgres</text>
+  <text class="small" x="670" y="884" text-anchor="middle">GAM · jobs（queue 表）· audit</text>
+  <text class="small" x="160" y="928">只有 pgbouncer 能連 postgres</text>
+
+  <rect class="zone" x="60" y="984" width="880" height="150" rx="10"/>
+  <text class="small" x="84" y="1008">外部（不可信）</text>
+  <rect class="node external" x="140" y="1030" width="260" height="64" rx="8"/>
+  <text class="label" x="270" y="1058" text-anchor="middle">Egress Gateway</text>
+  <text class="small" x="270" y="1078" text-anchor="middle">唯一出口 · allowlist · 稽核</text>
+  <rect class="node risk" x="580" y="1030" width="300" height="64" rx="8"/>
+  <text class="label" x="730" y="1058" text-anchor="middle">外部 MCP（第三方）</text>
+  <text class="small" x="730" y="1078" text-anchor="middle">回應 = 不可信輸入（間接注入）</text>
+
+  <path class="edge" marker-end="url(#a)" d="M500 108 V 124"/>
+  <path class="edge" marker-end="url(#a)" d="M500 170 V 240"/>
+  <path class="edge" marker-end="url(#a)" d="M460 304 V 332 H 220 V 396"/>
+  <path class="edge" marker-end="url(#a)" d="M340 420 H 620"/>
+  <path class="edge" marker-end="url(#a)" d="M340 420 H 470 V 489 H 620"/>
+  <path class="edge" marker-end="url(#a)" d="M340 420 H 520 V 553 H 620"/>
+  <path class="dash" marker-end="url(#a)" d="M340 540 H 620"/>
+  <text class="small" x="420" y="532">worker 同路徑</text>
+  <path class="edge" marker-end="url(#a)" d="M220 614 V 800 H 260 V 836"/>
+  <path class="edge" marker-end="url(#a)" d="M360 868 H 520"/>
+  <path class="edge" marker-end="url(#a)" d="M100 430 H 40 V 1062 H 140"/>
+  <text class="small" x="46" y="700">呼叫外部 MCP</text>
+  <path class="edge" marker-end="url(#a)" d="M400 1062 H 580"/>
+  <text class="small" x="430" y="1050">回程同路徑</text>
+</svg>
+</main>

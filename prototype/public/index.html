@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SRE Platform — Workspace 存取 Prototype</title>
+<style>
+  :root{--bg:#0f172a;--panel:#111c33;--panel2:#16233f;--line:#24344f;--tx:#e6edf7;--dim:#8ba0bf;--acc:#3b82f6;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--tx)}
+  a{color:var(--acc)}
+  .hidden{display:none!important}
+
+  /* login */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+  #login h1{font-size:22px;margin:0}
+  #login .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px 28px;width:360px}
+  #login input{width:100%;padding:10px 12px;margin:6px 0 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);font-size:14px}
+  #login button{width:100%;padding:11px;border-radius:9px;border:0;background:var(--acc);color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+  #login .demo{margin-top:14px;font-size:12px;color:var(--dim)}
+  #login .demo button{width:auto;display:inline-block;background:var(--panel2);color:var(--tx);border:1px solid var(--line);padding:5px 9px;margin:3px 3px 0 0;font-size:12px;font-weight:500}
+  .err{color:var(--err);font-size:13px;min-height:16px}
+
+  /* shell */
+  header{display:flex;align-items:center;gap:14px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  header .logo{font-weight:700}
+  header .who{color:var(--dim);font-size:13px}
+  header .spacer{flex:1}
+  .chip{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);margin-left:6px}
+  .chip.temp{border-color:var(--warn);color:var(--warn)}
+  header button{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+
+  .wrap{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 53px)}
+  aside{border-right:1px solid var(--line);padding:12px;overflow:auto}
+  aside h3,main h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:6px 0 10px}
+  main{padding:18px 22px;overflow:auto}
+
+  .node{margin-left:0}
+  .node .row{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:7px;cursor:default;font-size:13px}
+  .node .row .lvl{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+  .node .row.locked{opacity:.42}
+  .ws{display:flex;align-items:center;gap:8px;padding:6px 8px;margin:2px 0 2px 8px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid transparent}
+  .ws:hover{background:var(--panel2)}
+  .ws.active{background:var(--panel2);border-color:var(--acc)}
+  .ws .kind{font-size:10px;color:var(--dim);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-left:auto}
+  .ws .badge{font-size:10px;padding:0 5px;border-radius:5px;border:1px solid var(--line);color:var(--dim)}
+  .ws .badge.shared{border-color:var(--acc);color:var(--acc)}
+  .ws .badge.linked{border-color:var(--ok);color:var(--ok)}
+
+  .crumb{font-size:12px;color:var(--dim);margin-bottom:14px}
+  .crumb b{color:var(--tx)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .card .k{font-size:11px;color:var(--dim)}
+  .card .v{font-size:22px;font-weight:700;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .st{padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid var(--line)}
+  .st.Healthy,.st.ok,.st.Resolved{color:var(--ok);border-color:var(--ok)}
+  .st.Warning,.st.Open{color:var(--warn);border-color:var(--warn)}
+  .notice{background:#1d2a45;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--dim);margin:12px 0}
+  .notice.warn{border-left-color:var(--warn)}
+  .empty{color:var(--dim);font-size:13px;padding:20px 0}
+  .roles{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .rolechip{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line)}
+  .rolechip b{color:var(--acc);font-weight:600}
+</style>
+</head>
+<body>
+
+<!-- ============ 登入 ============ -->
+<div id="login">
+  <h1>🛡️ SRE Platform</h1>
+  <div class="card">
+    <div style="font-size:13px;color:var(--dim);margin-bottom:12px">登入後，你會看到「你有權存取」的 Workspace 階層（處 → 部門 → 課 → Workspace）</div>
+    <label style="font-size:12px;color:var(--dim)">帳號</label>
+    <input id="u" placeholder="username" value="eng.mon" />
+    <label style="font-size:12px;color:var(--dim)">密碼（demo123）</label>
+    <input id="p" type="password" value="demo123" />
+    <div class="err" id="loginErr"></div>
+    <button onclick="doLogin()">登入</button>
+    <div class="demo">快速試不同身分（密碼皆 demo123）：<br/>
+      <button onclick="quick('admin')">平台管理員</button>
+      <button onclick="quick('chief.info')">處長</button>
+      <button onclick="quick('mgr.sysops')">部門主管</button>
+      <button onclick="quick('lead.mon')">課長</button>
+      <button onclick="quick('eng.mon')">值班工程師</button>
+      <button onclick="quick('viewer.app2')">觀察(唯讀)</button>
+      <button onclick="quick('auditor')">稽核</button>
+      <button onclick="quick('noc.duty')">NOC</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 主畫面 ============ -->
+<div id="shell" class="hidden">
+  <header>
+    <span class="logo">🛡️ SRE Platform</span>
+    <span class="who" id="who"></span>
+    <span id="roleChips"></span>
+    <span class="spacer"></span>
+    <button id="auditBtn" class="hidden" onclick="showAudit()">稽核日誌</button>
+    <button onclick="logout()">登出</button>
+  </header>
+  <div class="wrap">
+    <aside>
+      <h3>你的 Workspaces</h3>
+      <div id="tree"></div>
+    </aside>
+    <main id="main">
+      <div class="empty">← 左邊選一個 workspace</div>
+    </main>
+  </div>
+</div>
+
+<script>
+let TOKEN = localStorage.getItem("sre_token") || "";
+let ME = null;
+
+const api = async (path, opts = {}) => {
+  const r = await fetch(path, {
+    ...opts,
+    headers: { "Content-Type": "application/json", ...(TOKEN ? { Authorization: "Bearer " + TOKEN } : {}), ...(opts.headers || {}) },
+  });
+  return { status: r.status, body: await r.json().catch(() => ({})) };
+};
+
+function quick(u) { document.getElementById("u").value = u; document.getElementById("p").value = "demo123"; doLogin(); }
+
+async function doLogin() {
+  const username = document.getElementById("u").value.trim();
+  const password = document.getElementById("p").value;
+  const { body } = await api("/api/login", { method: "POST", body: JSON.stringify({ username, password }) });
+  if (!body.token) { document.getElementById("loginErr").textContent = body.error || "登入失敗"; return; }
+  TOKEN = body.token; localStorage.setItem("sre_token", TOKEN);
+  boot();
+}
+
+function logout() { TOKEN = ""; localStorage.removeItem("sre_token"); location.reload(); }
+
+const LEVEL = { platform: "平台", office: "處", department: "部門", section: "課" };
+
+async function boot() {
+  const me = await api("/api/me");
+  if (me.status !== 200) { TOKEN = ""; localStorage.removeItem("sre_token"); return; }
+  ME = me.body;
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("shell").classList.remove("hidden");
+
+  document.getElementById("who").textContent = `${ME.user.displayName} · ${ME.user.title || ""} · ${ME.user.orgName}`;
+  document.getElementById("roleChips").innerHTML = ME.roles
+    .map((r) => `<span class="chip${r.temporary ? " temp" : ""}">${r.roleName} @ ${r.orgName}${r.temporary ? " ⏱" : ""}</span>`)
+    .join("");
+  if (ME.capabilities.includes("view.audit")) document.getElementById("auditBtn").classList.remove("hidden");
+
+  const [orgs, wss] = await Promise.all([api("/api/orgs"), api("/api/workspaces")]);
+  renderTree(orgs.body.roots, wss.body.workspaces);
+}
+
+function renderTree(roots, workspaces) {
+  const byOrg = {};
+  workspaces.forEach((w) => (byOrg[w.orgId] = byOrg[w.orgId] || []).push(w));
+  const el = document.getElementById("tree");
+  el.innerHTML = "";
+  const nodeHtml = (n) => {
+    const kids = (n.children || []).map(nodeHtml).join("");
+    const ws = (byOrg[n.id] || [])
+      .map((w) => `<div class="ws" data-id="${w.id}" onclick="openWs('${w.id}')">
+          <span>📦</span><span>${w.name}</span>
+          <span class="kind">${w.kind}</span>
+          ${w.reason === "shared" ? '<span class="badge shared">共用</span>' : ""}
+          ${w.reason === "linked" ? '<span class="badge linked">關聯</span>' : ""}
+        </div>`)
+      .join("");
+    return `<div class="node">
+      <div class="row ${n.accessible ? "" : "locked"}">
+        <span class="lvl">${LEVEL[n.level] || n.level}</span><span>${n.name}</span>${n.accessible ? "" : " 🔒"}
+      </div>${ws}${kids}
+    </div>`;
+  };
+  el.innerHTML = roots.map(nodeHtml).join("") || '<div class="empty">沒有可存取的 workspace</div>';
+}
+
+async function openWs(id) {
+  document.querySelectorAll(".ws").forEach((e) => e.classList.toggle("active", e.dataset.id === id));
+  const { status, body } = await api("/api/workspaces/" + encodeURIComponent(id));
+  const main = document.getElementById("main");
+  if (status !== 200) { main.innerHTML = `<div class="notice warn">${body.error}</div>`; return; }
+  const w = body.workspace;
+  const crumb = w.breadcrumb.map((b) => b.name).join("  ›  ");
+  const counts = {};
+  body.resources.forEach((r) => (counts[r.type] = (counts[r.type] || 0) + 1));
+  main.innerHTML = `
+    <div class="crumb">${crumb}  ›  <b>${w.name}</b></div>
+    <h3>${w.name} <span class="chip">${w.kind}</span></h3>
+    <div style="color:var(--dim);font-size:13px">${w.description || ""}</div>
+    <div class="cards" style="margin-top:14px">
+      <div class="card"><div class="k">可見資源</div><div class="v">${body.resources.length}</div></div>
+      <div class="card"><div class="k">服務</div><div class="v">${counts.service || 0}</div></div>
+      <div class="card"><div class="k">事件</div><div class="v">${counts.incident || 0}</div></div>
+      <div class="card"><div class="k">儀表板/報告</div><div class="v">${(counts.dashboard || 0) + (counts.report || 0)}</div></div>
+    </div>
+    ${body.hiddenCount ? `<div class="notice warn">有 ${body.hiddenCount} 筆資源不在你的資料範圍（DataScope）內 — 看得到這個 workspace，但看不到別單位的資料。這是設計如此，不是錯誤。</div>` : ""}
+    <table>
+      <tr><th>類型</th><th>名稱</th><th>主責單位</th><th>狀態</th></tr>
+      ${body.resources.map((r) => `<tr><td>${r.type}</td><td>${r.name}</td><td>${r.ownerOrgName || ""}</td><td><span class="st ${r.status}">${r.status || "-"}</span></td></tr>`).join("") || ""}
+    </table>
+    ${body.resources.length ? "" : '<div class="empty">此 workspace 內沒有你範圍內的資源</div>'}
+  `;
+}
+
+async function showAudit() {
+  const { status, body } = await api("/api/audit");
+  const main = document.getElementById("main");
+  if (status !== 200) { main.innerHTML = `<div class="notice warn">${body.error}</div>`; return; }
+  main.innerHTML = `
+    <h3>稽核日誌（最近 100 筆）</h3>
+    <div style="color:var(--dim);font-size:12.5px">誰、何時、看了/做了什麼、結果 — 不可變留痕。</div>
+    <table>
+      <tr><th>時間</th><th>人員</th><th>動作</th><th>目標</th><th>詳細</th><th>結果</th></tr>
+      ${body.entries.map((e) => `<tr><td>${(e.ts || "").replace("T", " ").slice(0, 19)}</td><td>${e.display_name || "-"}</td><td>${e.action}</td><td>${e.target || ""}</td><td>${e.detail || ""}</td><td><span class="st ${e.result === "ok" ? "Healthy" : "Warning"}">${e.result}</span></td></tr>`).join("")}
+    </table>`;
+}
+
+if (TOKEN) boot();
+</script>
+</body>
+</html>

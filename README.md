@@ -32,6 +32,13 @@ npm run preview  # 預覽 production build
 
 - [`docs/platform-org-permissions.md`](docs/platform-org-permissions.md) — Platform 定位的組織／權限架構設計（處→部門→課、Capability × DataScope × Action）
 
+## Prototype（可動）
+
+- [`prototype/`](prototype/) — SQLite schema v1 + 零依賴可跑 prototype：**登入 → 看到哪些 Workspace**（Azure 式階層：處 › 部門 › 課 › Workspace）
+  ```bash
+  cd prototype && node seed.mjs && node server.mjs   # → http://localhost:5180
+  ```
+
 ## 用 PAAW coding app 開發
 
 1. 先 clone 這個 repo（或直接指到本機目錄）

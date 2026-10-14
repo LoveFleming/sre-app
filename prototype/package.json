@@ -1,0 +1,12 @@
+{
+  "name": "sre-platform-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "SRE Platform — 組織/權限 SQLite schema + 可動 prototype（登入 → 看到哪些 workspace）",
+  "scripts": {
+    "seed": "node seed.mjs",
+    "start": "node server.mjs",
+    "dev": "node server.mjs"
+  }
+}

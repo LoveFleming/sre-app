@@ -102,6 +102,28 @@ SRE app 的 agent 只做「讀 / 查 / 關聯 / 開單 / 通知」，全部透�
 3. 可觀測：job 狀態在 DB 裡，一個 SQL 就看完全部
 4. 可精準控流：併發、配額、重試、優先序全在程式裡，不用跟 k8s 調度器搏鬥
 
+## 4.5 大量長跑巡檢 job：pod 數不會爆
+
+**關鍵：一個 worker pod 同時跑 N 個 job。**
+agent 工作是 **I/O-bound**（大部分時間在等 LLM / API 回應，不是 CPU），
+所以單一 worker pod 併發 20~50 個 job 很正常。
+
+- 1000 個巡檢 job **≠ 1000 個 pod**；是「queue 1000 筆 + 20~30 個 worker pod」
+- KEDA 依 queue 深度擴縮，但**一定要設 `maxReplicas` 上限** → pod 數有界，不會爆
+- 用 `resources.requests/limits` 把每個 pod 的記憶體框住（每個 in-flight job 都要吃一點）
+
+**長跑 job 紀律（不然會卡死或漏單）：**
+- `lease_until` + **心跳續租**（worker 每 30s 更新）→ worker 掛掉自動被別的 worker 接手
+- `max_runtime` + timeout → 不讓一個 job 永久占位
+- **別在 job 全程握著 DB 連線**：pgbouncer transaction pooling，每次查詢 acquire/release
+- **進度寫 DB**（`job_events`）；**長工作不要用 SSE 撐著** —— SSE 是聊天用的，
+  巡檢用「DB 狀態 + UI 輪詢/訂閱」，否則一條連線掛幾小時
+- 取消：`cancel_requested` 旗標，worker 定期檢查
+- 成本：per-group token 配額
+
+**建議分池：** `worker-light`（秒級查詢）+ `worker-heavy`（分鐘~小時巡檢）
+→ 長巡檢不會卡住快工作，資源限制也能分開設。
+
 ## 5. 安全模型（為什麼這樣最安全）
 
 **最小權限的關鍵：只有 `mcp-k8s` 有 kubeconfig。**
@@ -121,6 +143,24 @@ agent runtime（api / worker）**完全沒有 k8s 憑證**，它要操作叢集�
 - **容器**：全部 `runAsNonRoot`、`readOnlyRootFilesystem`、drop all caps、設 resources limit。
 - **SQL**：一律參數化；`group_id` 過濾 + Postgres RLS 雙保險。
 - **稽核**：所有寫入與授權決策寫 `audit_log`（誰、哪個 group、做了什麼、何時）。
+
+## 5.5 層 2 的具體安全風險與對策
+
+**風險核心不在「對外」，在「內部橫向」。**
+api / worker / mcp-* 同一張內網、若又共用憑證 → **打穿一個就等於全部**。
+
+| # | 風險 | 對策 |
+|---|---|---|
+| 1 | **agent 是被下指令的對象**（prompt injection）→ 被誘導呼叫 mcp 工具做破壞（「幫我刪掉那個 namespace」） | mcp server **自己做授權**（不信任呼叫者）；`mcp-k8s` 用**限定 namespace 的 SA**；破壞性動作要 GAM `approve` + 人為確認 |
+| 2 | **憑證共用 = 爆炸半徑大** | **每個元件自己的身分**：各自 ServiceAccount、各自 DB role（api/worker 不該有 DDL 權）、各自範圍的 token（ES read-only、Grafana viewer） |
+| 3 | **mcp-\* 橫向移動** | NetworkPolicy **點對點**（api→mcp-k8s 只開那個 port），不是 api→整網段；mcp server 預設**不掛 SA token** |
+| 4 | **worker 執行「使用者影響得到的 payload」= 最像 RCE 的地方** | **永不用 shell 串接 payload**（用 `execFile` + argv）；payload 視為不可信輸入 + schema 驗證；`readOnlyRootFilesystem` + drop caps + seccomp；**絕不掛 docker.sock** |
+| 5 | **SSE 長連線 = 自傷 DoS** | Ingress `limit_conn`（每 IP / 每 token）、每使用者併發串流上限、超過 429；proxy 關 buffering |
+| 6 | **稽核被改寫** | `audit_log` append-only、由獨立路徑寫；agent 改不到自己的稽核 |
+
+**pod 越多 = 身分越多、IP 越多** → NetworkPolicy 一律用 **label selector** 表達，不要用 IP 清單。
+
+> 一句話：層 2 的安全**不是靠「內網」兩個字**，是靠「每個元件最小權限 + 點對點連線 + 不信任呼叫者」。
 
 ## 6. 多租戶（circle group）
 
